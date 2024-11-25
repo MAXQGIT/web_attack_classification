@@ -13,7 +13,8 @@ import pandas as pd
 from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
 
-def add_tfidata_feats(data, col, n_components=16):
+
+def add_tfidata_feats(data, col, n_components):
     text = list(data[col].values)
     tf = TfidfVectorizer(stop_words='english')
     tf.fit(text)
@@ -23,8 +24,11 @@ def add_tfidata_feats(data, col, n_components=16):
     svd.fit(X)
     joblib.dump(svd, 'model/{}_svd.joblib'.format(col))
     X_svd = svd.transform(X)
-    for i in range(n_components):
-        data[f'{col}_tfidata_{i}'] = X_svd[:, i]
+    # for i in range(n_components):
+    #     data[f'{col}_tfidata_{i}'] = X_svd[:, i]
+    columns = [f'{col}_tfidata_{i}' for i in range(n_components)]
+    data_svd = pd.DataFrame(X_svd, columns=columns)
+    data =pd.concat([data, data_svd], axis=1)
     return data
 
 
@@ -32,9 +36,18 @@ def tfidf_feature(data):
     data = add_tfidata_feats(data, 'url_unquote', n_components=16)
     data = add_tfidata_feats(data, 'user_agent', n_components=16)
     data = add_tfidata_feats(data, 'body', n_components=32)
+    # data = add_tfidata_feats(data, 'scheme', n_components=5)
+    # data = add_tfidata_feats(data, 'netloc', n_components=5)
+    # data = add_tfidata_feats(data, 'path', n_components=5)
+    # data = add_tfidata_feats(data, 'parameters', n_components=5)
+    # data = add_tfidata_feats(data, 'query', n_components=5)
+    # data = add_tfidata_feats(data, 'fragment', n_components=5)
     data['contact'] = data['method'] + ' ' + data['refer'] + ' ' + data['url_filetype'] + ' ' + data['ua_short'] + ' ' + \
                       data['ua_first']
-    data = add_tfidata_feats(data, 'contact', n_components=16)
+    data = add_tfidata_feats(data, 'contact', n_components=32)
+    # data['new_url'] = data['scheme'] + ' ' + data['netloc'] + ' ' + data['path'] + ' ' + data['parameters'] + ' ' + \
+    #                   data['query'] + ' ' + data['fragment']
+    # data = add_tfidata_feats(data, 'new_url', n_components=32)
     return data
 
 
@@ -44,6 +57,7 @@ def lebelenconder(data):
     #     le.fit(data[col])
     #     joblib.dump(le, 'model/{}_labelencoder.joblib'.format(col))
     #     data[col] = le.transform(data[col])
+    # data =data.drop(['scheme','netloc','path','parameters','query','fragment','new_url'],axis=1)
     data = data.drop(['method', 'refer', 'url_filetype', 'ua_short', 'ua_first', 'contact'], axis=1)
     return data
 
@@ -58,15 +72,15 @@ def lebelenconder(data):
 #         df_oversampled = pd.concat([df_oversampled, df_label, df_label_oversampled])
 #     return df_oversampled
 
-def sample_data(data):
-    y =data[['label']]
-    x =data.drop(['label'], axis=1)
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
-    smote = SMOTE(random_state=42)
-    X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
-    df_resampled = pd.DataFrame(X_resampled, columns=x.columns)  # 用原来的列名
-    df_resampled['label'] = y_resampled
-    return df_resampled
+# def sample_data(data):
+#     y =data[['label']]
+#     x =data.drop(['label'], axis=1)
+#     X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
+#     smote = SMOTE(random_state=42)
+#     X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+#     df_resampled = pd.DataFrame(X_resampled, columns=x.columns)  # 用原来的列名
+#     df_resampled['label'] = y_resampled
+#     return df_resampled
 
 
 def tensor_data(cfg, data):

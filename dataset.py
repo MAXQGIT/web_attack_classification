@@ -40,6 +40,18 @@ def process_url(data):
     data['url_query_num'] = data['url_query'].apply(len)
     data['url_query_max_len'] = data['url_query'].apply(find_max_str_length)
     data['url_query_len_std'] = data['url_query'].apply(find_str_length_std)
+    # data['scheme_len'] = data['url'].apply(lambda x: len(urlparse(x).scheme))
+    # data['scheme'] = data['url'].apply(lambda x: urlparse(x).scheme)
+    # data['netloc'] = data['url'].apply(lambda x: urlparse(x).netloc)
+    # data['netloc_len'] = data['url'].apply(lambda x: len(urlparse(x).netloc))
+    # data['path'] = data['url'].apply(lambda x: urlparse(x).path)
+    # data['path_len'] = data['url'].apply(lambda x: len(urlparse(x).path))
+    # data['parameters'] = data['url'].apply(lambda x: urlparse(x).params)
+    # data['parameters_len'] = data['url'].apply(lambda x: len(urlparse(x).params))
+    # data['query'] = data['url'].apply(lambda x: urlparse(x).query)
+    # data['query_len'] = data['url'].apply(lambda x: len(urlparse(x).query))
+    # data['fragment'] = data['url'].apply(lambda x: urlparse(x).fragment)
+    # data['fragment_len'] = data['url'].apply(lambda x: len(urlparse(x).fragment))
     return data
 
 
@@ -48,6 +60,7 @@ def find_url_filetype(x):
         return re.search(r'\.[a-z]+', x).group()
     except:
         return '__NaN__'
+
 
 def get_url(data):
     data['url_path'] = data['url_unquote'].apply(lambda x: urlparse(x)[2])
@@ -58,16 +71,16 @@ def get_url(data):
     data['ua_first'] = data['user_agent'].apply(lambda x: x.split(' ')[0])
     return data
 
+
 def process_data(cfg):
     data = read_data(cfg)
     data = process_url(data)
     data = get_url(data)
     return data
 
+
 if __name__ == '__main__':
     cfg = Config()
     data = process_data(cfg)
     print(data.head())
     print(data.columns)
-    
-    
