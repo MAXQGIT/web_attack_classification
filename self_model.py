@@ -12,9 +12,9 @@ class LSTM_MODEL(nn.Module):
     def forward(self, x):
         x = x.reshape(x.shape[0], 1, -1)
         x, _ = self.lstm(x)
-        y, attn_output_weights = self.attention(x, x, x)
-        y = x + y
-        y, _ = self.gru(y)
+        # y, attn_output_weights = self.attention(x, x, x)
+        # y = x + y
+        y, _ = self.gru(x)
         # y = x + y
         y = self.linear(y)
         return y
