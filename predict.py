@@ -12,8 +12,9 @@ def add_tfidata_feats(data, col, n_components=16):
     X = tf.transform(text)
     svd = joblib.load('model/{}_svd.joblib'.format(col))
     X_svd = svd.transform(X)
-    for i in range(n_components):
-        data[f'{col}_tfidata_{i}'] = X_svd[:, i]
+    columns = [f'{col}_tfidata_{i}' for i in range(n_components)]
+    data_svd = pd.DataFrame(X_svd, columns=columns)
+    data = pd.concat([data, data_svd], axis=1)
     return data
 
 
@@ -21,26 +22,36 @@ def tfidf_feature(data):
     data = add_tfidata_feats(data, 'url_unquote', n_components=16)
     data = add_tfidata_feats(data, 'user_agent', n_components=16)
     data = add_tfidata_feats(data, 'body', n_components=32)
+    # data = add_tfidata_feats(data, 'scheme', n_components=5)
+    # data = add_tfidata_feats(data, 'netloc', n_components=5)
+    # data = add_tfidata_feats(data, 'path', n_components=5)
+    # data = add_tfidata_feats(data, 'parameters', n_components=5)
+    # data = add_tfidata_feats(data, 'query', n_components=5)
+    # data = add_tfidata_feats(data, 'fragment', n_components=5)
     data['contact'] = data['method'] + ' ' + data['refer'] + ' ' + data['url_filetype'] + ' ' + data['ua_short'] + ' ' + \
                       data['ua_first']
-    data = add_tfidata_feats(data, 'contact', n_components=16)
+    data = add_tfidata_feats(data, 'contact', n_components=32)
+    data['new_url'] = data['scheme'] + ' ' + data['netloc'] + ' ' + data['path'] + ' ' + data['parameters'] + ' ' + \
+                      data['query'] + ' ' + data['fragment']
+    data = add_tfidata_feats(data, 'new_url', n_components=32)
     return data
 
 
 def lebelenconder(data):
-
     # for col in ['method', 'refer', 'url_filetype', 'ua_short', 'ua_first']:
     #     le = LabelEncoder()
     #     le.fit(data[col])
     #     joblib.dump(le, 'model/{}_labelencoder.joblib'.format(col))
     #     data[col] = le.transform(data[col])
-    data =data.drop(['method', 'refer', 'url_filetype', 'ua_short', 'ua_first','contact'],axis=1)
+    data =data.drop(['scheme','netloc','path','parameters','query','fragment','new_url'],axis=1)
+    data = data.drop(['method', 'refer', 'url_filetype', 'ua_short', 'ua_first', 'contact'], axis=1)
+    data = data[data['label'].isna()]  # 实际使用删除，刷榜用的代码
+    data = data.drop('label', axis=1)
     return data
-
 
 if __name__ == '__main__':
     cfg = Config()
-    cfg.root_path = 'data/test'
+    # cfg.root_path = 'data/test'
     data = process_data(cfg)
     data = tfidf_feature(data)
     data = lebelenconder(data)

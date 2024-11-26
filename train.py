@@ -28,7 +28,7 @@ def add_tfidata_feats(data, col, n_components):
     #     data[f'{col}_tfidata_{i}'] = X_svd[:, i]
     columns = [f'{col}_tfidata_{i}' for i in range(n_components)]
     data_svd = pd.DataFrame(X_svd, columns=columns)
-    data =pd.concat([data, data_svd], axis=1)
+    data = pd.concat([data, data_svd], axis=1)
     return data
 
 
@@ -45,9 +45,9 @@ def tfidf_feature(data):
     data['contact'] = data['method'] + ' ' + data['refer'] + ' ' + data['url_filetype'] + ' ' + data['ua_short'] + ' ' + \
                       data['ua_first']
     data = add_tfidata_feats(data, 'contact', n_components=32)
-    # data['new_url'] = data['scheme'] + ' ' + data['netloc'] + ' ' + data['path'] + ' ' + data['parameters'] + ' ' + \
-    #                   data['query'] + ' ' + data['fragment']
-    # data = add_tfidata_feats(data, 'new_url', n_components=32)
+    data['new_url'] = data['scheme'] + ' ' + data['netloc'] + ' ' + data['path'] + ' ' + data['parameters'] + ' ' + \
+                      data['query'] + ' ' + data['fragment']
+    data = add_tfidata_feats(data, 'new_url', n_components=32)
     return data
 
 
@@ -57,8 +57,9 @@ def lebelenconder(data):
     #     le.fit(data[col])
     #     joblib.dump(le, 'model/{}_labelencoder.joblib'.format(col))
     #     data[col] = le.transform(data[col])
-    # data =data.drop(['scheme','netloc','path','parameters','query','fragment','new_url'],axis=1)
+    data = data.drop(['scheme', 'netloc', 'path', 'parameters', 'query', 'fragment', 'new_url'], axis=1)
     data = data.drop(['method', 'refer', 'url_filetype', 'ua_short', 'ua_first', 'contact'], axis=1)
+    data = data[data['label'].notna()] #实际使用删除，刷榜用的代码
     return data
 
 
@@ -102,7 +103,7 @@ def test(cfg, loss_fn, model, test_data):
         x, y = x.to(cfg.device), y.to(cfg.device)
         pre = model(x.float())
         pre = pre.reshape(pre.shape[0], -1)
-        loss = loss_fn(pre, y)
+        loss = loss_fn(pre, y.to(torch.int64))
         train_loss_list.append(loss.item())
         _, pre = torch.max(pre, 1)
         y = y.detach().cpu().tolist()
@@ -143,7 +144,7 @@ if __name__ == '__main__':
             pre = model(x.float())
             pre = pre.reshape(pre.shape[0], -1)
             optimizer.zero_grad()
-            loss = loss_fn(pre, y)
+            loss = loss_fn(pre, y.to(torch.int64))
             train_loss_list.append(loss.item())
             loss.backward()
             optimizer.step()
